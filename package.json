@@ -1,10 +1,11 @@
 {
   "name": "nodejs-with-singlestore-demo",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
+    "load": "node lib/load.js",
     "prettify": "prettier --write \"**/*.{js,jsx,ts,tsx,md}\""
   },
   "keywords": [],
@@ -14,6 +15,7 @@
   "dependencies": {
     "@singlestore/ai": "^0.0.32",
     "@singlestore/client": "^0.0.42",
+    "csv-parser": "^3.0.0",
     "dotenv": "^16.4.5",
     "express": "^4.19.2"
   },
