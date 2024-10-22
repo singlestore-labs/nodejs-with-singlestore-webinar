@@ -1,17 +1,20 @@
-import express from "express";
-import "dotenv/config";
+const express = require("express");
+const { ai, database } = require("./lib/db");
 
 const app = express();
 app.use(express.json());
 
-app.get("/search", async (req, res) => {
-  const { q } = req.query;
+const expensesTable = database.table.use("expenses");
 
-  const tableSchema = await database.table.use("<TABLE_NAME>").showColumnsInfo(true);
+app.get("/expenses/search", async (req, res, next) => {
+  try {
+    const { q } = req.query;
 
-  const completion = await ai.chatCompletions.create({
-    model: "gpt-4o",
-    prompt: `\
+    const tableSchema = await expensesTable.showColumnsInfo(true);
+
+    const completion = await ai.chatCompletions.create({
+      model: "gpt-4o",
+      prompt: `\
       User prompt: ${q}
       Table schema: ${JSON.stringify(tableSchema)}
 
@@ -19,12 +22,72 @@ app.get("/search", async (req, res) => {
       Include only the JSON value without any formatting in your response to make it ready for use with the JS JSON.parse method.
       If there is an issue return an empty JSON value.
     `,
-  });
+    });
 
-  const params = JSON.parse(completion.content);
-  console.dir(params);
+    const { category, merchant, amount } = JSON.parse(completion.content);
 
-  const result = await database.query(`<SEARCH_QUERY>`);
+    const rows = await expensesTable.find({
+      where: {
+        category,
+        merchant,
+        amount: amount ? Number(amount) : undefined,
+      },
+    });
+
+    res.status(200).json(rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/expenses", async (req, res, next) => {
+  try {
+    const { merchant, category } = req.query;
+
+    const rows = await expensesTable.find({
+      where: {
+        merchant,
+        category,
+      },
+    });
+
+    res.status(200).json(rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/expenses/:id", async (req, res, next) => {
+  try {
+    const [row] = await expensesTable.find({ where: { id: req.params.id } });
+    res.status(200).json(row);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.put("/expenses/:id", async (req, res, next) => {
+  try {
+    const { id, ...values } = req.body;
+    await expensesTable.update(values, { id: req.params.id });
+    res.status(200).send();
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.delete("/expenses/:id", async (_req, res, next) => {
+  try {
+    await expensesTable.delete({ id: res.params.id });
+    res.status(200).send();
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.use((error, _req, res) => {
+  console.error(error.stack);
+  res.status(500).send(error);
 });
 
 const PORT = process.env.PORT || 3000;
