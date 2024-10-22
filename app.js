@@ -5,6 +5,8 @@ const express = require("express");
 const { readFileSync } = require("fs");
 const { AI } = require("@singlestore/ai");
 const { SingleStoreClient } = require("@singlestore/client");
+const csv = require("csv-parser");
+const fs = require("fs");
 require("dotenv").config();
 
 // Step 2: Create an instance of an Express application
@@ -33,6 +35,79 @@ const connection = client.connect({
 
 // Use database
 const database = connection.database.use(process.env.DB_NAME);
+
+async function importCSVData(filePath, tableName) {
+
+  await database.table.create({
+    name: tableName,
+    columns: {
+      TransactionID: {
+        type: "BIGINT",
+        primaryKey: true,
+        autoIncrement: true,
+        nullable: false,
+      },
+      Datetime: {
+        type: "DATETIME",
+        nullable: false,
+      },
+      Merchant: {
+        type: "VARCHAR(255)",
+        nullable: false,
+      },
+      Category: {
+        type: "VARCHAR(255)",
+        nullable: false,
+      },
+      Amount: {
+        type: "DECIMAL(10, 2)",
+        nullable: false,
+      },
+      Description: {
+        type: "TEXT",
+        nullable: true,
+      },
+      Balance: {
+        type: "DECIMAL(10, 2)",
+        nullable: false,
+      },
+    },
+  });
+
+  const table = database.table.use(tableName);
+
+  return new Promise((resolve, reject) => {
+    fs.createReadStream(filePath)
+      .pipe(csv())
+      .on("data", async (row) => {
+        try {
+          await table.insert([{
+            TransactionID: row['Transaction ID'],
+            Datetime: row['Datetime'],
+            Merchant: row['Merchant'],
+            Category: row['Category'],
+            Amount: row['Amount'],
+            Description: row['Description'],
+            Balance: row['Balance']
+          }]);
+          console.log("Inserted row:", row);
+        } catch (error) {
+          console.error("Error inserting row:", error);
+        }
+      })
+      .on("end", () => {
+        console.log("CSV file successfully processed");
+        resolve();
+      })
+      .on("error", (error) => {
+        console.error("Error processing CSV file:", error);
+        reject(error);
+      });
+  });
+}
+
+// Call the function to import CSV data
+importCSVData("./financial_transactions_gen_z_debits_fixed_5000.csv", "<TABLE_NAME>");
 
 // Step 3: Define a route for the root URL (/)
 app.get("/", (req, res) => {
