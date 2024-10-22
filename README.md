@@ -8,3 +8,47 @@
 4. Install the dependencies by running `npm install`.
 5. Load data into a database by running `npm run load`.
 6. Run the server by running `npm run start`.
+
+## API
+
+#### Get All Expenses
+
+```
+GET http://localhost:3000/expenses
+```
+
+#### Get Filtered Expenses
+
+```
+GET http://localhost:3000/expenses?merchant=Airbnb&category=Travel
+```
+
+#### Get Expenses Record by ID
+
+```
+GET http://localhost:3000/expenses/:id
+```
+
+#### Update Expenses Record by ID
+
+```
+PUT http://localhost:3000/expenses/:id
+```
+
+#### Delete Expenses Record by ID
+
+```
+DELETE http://localhost:3000/expenses/:id
+```
+
+#### Search Expenses
+
+```
+GET http://localhost:3000/expenses/search?q=Travel with Airbnb
+```
+
+#### Ask Assistant
+
+```
+GET http://localhost:3000/expenses/ask?q=How much have I spent on Netfix?
+```
