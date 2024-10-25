@@ -44,11 +44,19 @@ DELETE http://localhost:3000/expenses/:id
 #### Search Expenses
 
 ```
-GET http://localhost:3000/expenses/search?q=Travel with Airbnb
+POST http://localhost:3000/expenses/search
+
+{
+    "query": "Travel with Airbnb"
+}
 ```
 
 #### Ask Assistant
 
 ```
-GET http://localhost:3000/expenses/ask?q=How much have I spent on Netfix?
+POST http://localhost:3000/expenses/ask
+
+{
+    "query": "How much have I spent on Netfix?"
+}
 ```
